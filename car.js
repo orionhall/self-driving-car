@@ -12,6 +12,8 @@ class Car {
 
     this.angle = 0;
 
+    this.damaged = false;
+
     this.sensor = new Sensor(this);
     this.controls = new Controls();
   }
@@ -19,7 +21,24 @@ class Car {
   update(roadBorders) {
     this.#move();
     this.polygon = this.#createPolygon();
+    this.damaged = this.#assessDamage(roadBorders);
     this.sensor.update(roadBorders);
+  }
+
+  draw(ctx) {
+    this.sensor.draw(ctx);
+    this.#drawCar(ctx);
+  }
+
+  #assessDamage(roadBorders) {
+    for (let i = 0; i < roadBorders.length; i++) {
+      if (polysIntersect(this.polygon, roadBorders[i])) {
+        console.log('yes')
+        return true;
+      }
+    }
+
+    return false;
   }
 
   #createPolygon() {
@@ -64,15 +83,11 @@ class Car {
     return points;
   }
 
-  draw(ctx) {
-    this.sensor.draw(ctx);
-    this.#drawCar(ctx);
-  }
-
   #drawCar(ctx) {
     // Draw the rectangle
+
+    ctx.fillStyle = this.damaged ? "gray" : "blue";
     ctx.beginPath();
-    ctx.fillStyle = "blue";
     ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
     for (let i = 1; i < this.polygon.length; i++) {
       ctx.lineTo(this.polygon[i].x, this.polygon[i].y);
@@ -80,9 +95,9 @@ class Car {
     ctx.fill();
 
     // Make some silly headlights
+    ctx.fillStyle = "white";
     const topRight = this.polygon[0];
     const topLeft = this.polygon[1];
-    ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.rect(
       topRight.x - this.width * 0.3, // this confused me but the beginning point is the left side
