@@ -43,16 +43,28 @@ class Car {
     const yStart = -this.height / 2;
     ctx.rect(xStart, yStart, this.width, this.height);
     ctx.fill();
-    ctx.fillStyle = "#000000"
+    ctx.fillStyle = "#000000";
 
+    // Make some silly headlights
     ctx.fillStyle = "white";
     ctx.beginPath();
-    ctx.rect(xStart + this.width * .15, yStart + 1, this.width * .2, this.height * .1);
+    ctx.rect(
+      xStart + this.width * 0.15,
+      yStart + 3,
+      this.width * 0.2,
+      this.height * 0.1
+    );
     ctx.fill();
     ctx.beginPath();
-    ctx.rect(xStart + this.width * .65, yStart + 1, this.width * .2, this.height * .1);
+    ctx.rect(
+      xStart + this.width * 0.65,
+      yStart + 3,
+      this.width * 0.2,
+      this.height * 0.1
+    );
     ctx.fill();
-    ctx.fillStyle = "#000000"
+
+    ctx.fillStyle = "#000000";
   }
 
   #move() {
