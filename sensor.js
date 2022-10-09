@@ -57,6 +57,9 @@ class Sensor {
           this.rayCount === 1 ? 0.5 : i / (this.rayCount - 1)
         ) + this.car.angle;
 
+      // So doing sin(angle) gives you a number you can then multiply by a length to give an x along that angle
+      // And cos(angle) for y
+
       const start = { x: this.car.x, y: this.car.y };
       const end = {
         // I know nothing about trigonometry anymore

@@ -18,51 +18,84 @@ class Car {
 
   update(roadBorders) {
     this.#move();
+    this.polygon = this.#createPolygon();
     this.sensor.update(roadBorders);
   }
 
+  #createPolygon() {
+    const points = [];
+    // Radius of the circle from the center point of the car
+    const radius = Math.hypot(this.width, this.height) / 2;
+    // Angle from midline of car to the radius (?)
+    const alpha = Math.atan2(this.width, this.height);
+
+    // this.angle - alpha
+    // If car straight, that's like y'know -30 degrees
+    // multiplied by radius gives x point radius distance away
+    // which would be the top left, but subtract this.x to make it top right
+    // which is somewhat confusing, but I think it's because y goes downwards
+    // so if we were using this.x + and this.y +, this would actually be bottom left
+    // :shrug:
+
+    // Top right
+    points.push({
+      x: this.x - Math.sin(this.angle - alpha) * radius,
+      y: this.y - Math.cos(this.angle - alpha) * radius,
+    });
+
+    // Top left
+    points.push({
+      x: this.x - Math.sin(this.angle + alpha) * radius,
+      y: this.y - Math.cos(this.angle + alpha) * radius,
+    });
+
+    // Bottom right
+    points.push({
+      x: this.x - Math.sin(Math.PI + this.angle - alpha) * radius,
+      y: this.y - Math.cos(Math.PI + this.angle - alpha) * radius,
+    });
+
+    // Bottom left
+    points.push({
+      x: this.x - Math.sin(Math.PI + this.angle + alpha) * radius,
+      y: this.y - Math.cos(Math.PI + this.angle + alpha) * radius,
+    });
+
+    return points;
+  }
+
   draw(ctx) {
-    // Save state of canvas because we are about to translate and rotate it
-    ctx.save();
-
-    // Set starting point of context (car?)
-    ctx.translate(this.x, this.y);
-
-    // Apply rotation
-    ctx.rotate(-this.angle);
-
-    this.#drawCar(ctx);
-
-    // Restore the context to its original state
-    ctx.restore();
-
     this.sensor.draw(ctx);
+    this.#drawCar(ctx);
   }
 
   #drawCar(ctx) {
-    // Build the rectangle
-    ctx.fillStyle = "blue";
+    // Draw the rectangle
     ctx.beginPath();
-    const xStart = -this.width / 2;
-    const yStart = -this.height / 2;
-    ctx.rect(xStart, yStart, this.width, this.height);
+    ctx.fillStyle = "blue";
+    ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
+    for (let i = 1; i < this.polygon.length; i++) {
+      ctx.lineTo(this.polygon[i].x, this.polygon[i].y);
+    }
     ctx.fill();
-    ctx.fillStyle = "#000000";
 
     // Make some silly headlights
+    const topRight = this.polygon[0];
+    const topLeft = this.polygon[1];
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.rect(
-      xStart + this.width * 0.15,
-      yStart + 3,
+      topRight.x - this.width * 0.3, // this confused me but the beginning point is the left side
+      topRight.y + 3,
       this.width * 0.2,
       this.height * 0.1
     );
     ctx.fill();
+
     ctx.beginPath();
     ctx.rect(
-      xStart + this.width * 0.65,
-      yStart + 3,
+      topLeft.x + this.width * 0.15,
+      topLeft.y + 3,
       this.width * 0.2,
       this.height * 0.1
     );
