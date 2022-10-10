@@ -68,13 +68,13 @@ class Car {
       y: this.y - Math.cos(this.angle + alpha) * radius,
     });
 
-    // Bottom right
+    // Bottom left bc it's 180 degrees around
     points.push({
       x: this.x - Math.sin(Math.PI + this.angle - alpha) * radius,
       y: this.y - Math.cos(Math.PI + this.angle - alpha) * radius,
     });
 
-    // Bottom left
+    // Bottom right
     points.push({
       x: this.x - Math.sin(Math.PI + this.angle + alpha) * radius,
       y: this.y - Math.cos(Math.PI + this.angle + alpha) * radius,
@@ -93,6 +93,21 @@ class Car {
       ctx.lineTo(this.polygon[i].x, this.polygon[i].y);
     }
     ctx.fill();
+
+    // // This was me trying to figure out how to make the headlights actually render properly, but I failed for now
+    // ctx.fillStyle = "red";
+    // ctx.beginPath();
+    // ctx.moveTo(this.polygon[0].x - 8, this.polygon[0].y + 5);
+    // ctx.lineTo(this.polygon[0].x - 13, this.polygon[0].y + 5);
+    // ctx.lineTo(this.polygon[0].x - 13, this.polygon[0].y + 10);
+    // ctx.lineTo(this.polygon[0].x - 8, this.polygon[0].y + 10);
+    // ctx.fill();
+
+    // ctx.moveTo(this.polygon[0].x + 3, this.polygon[0].y+3);
+    // for (let i = 1; i < this.polygon.length; i++) {
+    //   ctx.lineTo(this.polygon[i].x * (this.width * .3), this.polygon[i].y * );
+    // }
+    // ctx.fill();
 
     // Make some silly headlights
     ctx.fillStyle = "white";
