@@ -20,7 +20,34 @@ class Car {
 
   update(roadBorders) {
     this.#move();
-    this.polygon = this.#createPolygon();
+    this.polygon = this.#createPolygon(
+      this.angle,
+      this.width,
+      this.height,
+      this.x,
+      this.y
+    );
+    const slightlySmallerPolygon = this.#createPolygon(
+      this.angle,
+      this.width - 10,
+      this.height - 6,
+      this.x,
+      this.y
+    );
+    this.rightHeadlightPolygon = this.#createPolygon(
+      this.angle,
+      6,
+      4,
+      slightlySmallerPolygon[0].x,
+      slightlySmallerPolygon[0].y
+    );
+    this.leftHeadlightPolygon = this.#createPolygon(
+      this.angle,
+      6,
+      4,
+      slightlySmallerPolygon[1].x,
+      slightlySmallerPolygon[1].y
+    );
     this.damaged = this.#assessDamage(roadBorders);
     this.sensor.update(roadBorders);
   }
@@ -33,7 +60,7 @@ class Car {
   #assessDamage(roadBorders) {
     for (let i = 0; i < roadBorders.length; i++) {
       if (polysIntersect(this.polygon, roadBorders[i])) {
-        console.log('yes')
+        console.log("yes");
         return true;
       }
     }
@@ -41,43 +68,53 @@ class Car {
     return false;
   }
 
-  #createPolygon() {
+  #createPolygon(angle, width, height, x, y) {
     const points = [];
-    // Radius of the circle from the center point of the car
-    const radius = Math.hypot(this.width, this.height) / 2;
-    // Angle from midline of car to the radius (?)
-    const alpha = Math.atan2(this.width, this.height);
 
-    // this.angle - alpha
-    // If car straight, that's like y'know -30 degrees
-    // multiplied by radius gives x point radius distance away
-    // which would be the top left, but subtract this.x to make it top right
-    // which is somewhat confusing, but I think it's because y goes downwards
-    // so if we were using this.x + and this.y +, this would actually be bottom left
-    // :shrug:
+    // Line from the center to any of the points
+    const radius = Math.hypot(width, height) / 2;
+
+    // Angle from midline of car to the radius
+    const alpha = Math.atan2(width, height);
+
+    // We want to find the coordinates of a point
+    // We have the hypotenuse from the center of a rectangle to that point,
+    // so we want to find the lengths of the other two sides.
+    // No, not quite.
+    // We want to make a triangle where the x-axis is one of the sides and get its length,
+    // and then where the y-axis is one of the sides and get that length.
+    //
+    // We know the angle from the axis to the midline,        (this.angle)
+    // and we know the angle from the midline to the radius,  (alpha)
+    // so we can use that to determine the angle from the radius to an axis.
+    //
+    // After that,
+    // sin(someAngle) = opposite / hypotenuse
+    // cos(someAngle) = adjacent / hypotenuse
+    // So it gives us our opposite/adjacent side lengths which make our coordinates.
 
     // Top right
     points.push({
-      x: this.x - Math.sin(this.angle - alpha) * radius,
-      y: this.y - Math.cos(this.angle - alpha) * radius,
+      x: x - Math.sin(angle - alpha) * radius,
+      y: y - Math.cos(angle - alpha) * radius,
     });
 
     // Top left
     points.push({
-      x: this.x - Math.sin(this.angle + alpha) * radius,
-      y: this.y - Math.cos(this.angle + alpha) * radius,
+      x: x - Math.sin(angle + alpha) * radius,
+      y: y - Math.cos(angle + alpha) * radius,
     });
 
     // Bottom left bc it's 180 degrees around
     points.push({
-      x: this.x - Math.sin(Math.PI + this.angle - alpha) * radius,
-      y: this.y - Math.cos(Math.PI + this.angle - alpha) * radius,
+      x: x - Math.sin(Math.PI + angle - alpha) * radius,
+      y: y - Math.cos(Math.PI + angle - alpha) * radius,
     });
 
     // Bottom right
     points.push({
-      x: this.x - Math.sin(Math.PI + this.angle + alpha) * radius,
-      y: this.y - Math.cos(Math.PI + this.angle + alpha) * radius,
+      x: x - Math.sin(Math.PI + angle + alpha) * radius,
+      y: y - Math.cos(Math.PI + angle + alpha) * radius,
     });
 
     return points;
@@ -85,7 +122,6 @@ class Car {
 
   #drawCar(ctx) {
     // Draw the rectangle
-
     ctx.fillStyle = this.damaged ? "gray" : "blue";
     ctx.beginPath();
     ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
@@ -94,41 +130,29 @@ class Car {
     }
     ctx.fill();
 
-    // // This was me trying to figure out how to make the headlights actually render properly, but I failed for now
-    // ctx.fillStyle = "red";
-    // ctx.beginPath();
-    // ctx.moveTo(this.polygon[0].x - 8, this.polygon[0].y + 5);
-    // ctx.lineTo(this.polygon[0].x - 13, this.polygon[0].y + 5);
-    // ctx.lineTo(this.polygon[0].x - 13, this.polygon[0].y + 10);
-    // ctx.lineTo(this.polygon[0].x - 8, this.polygon[0].y + 10);
-    // ctx.fill();
-
-    // ctx.moveTo(this.polygon[0].x + 3, this.polygon[0].y+3);
-    // for (let i = 1; i < this.polygon.length; i++) {
-    //   ctx.lineTo(this.polygon[i].x * (this.width * .3), this.polygon[i].y * );
-    // }
-    // ctx.fill();
-
     // Make some silly headlights
     ctx.fillStyle = "white";
-    const topRight = this.polygon[0];
-    const topLeft = this.polygon[1];
     ctx.beginPath();
-    ctx.rect(
-      topRight.x - this.width * 0.3, // this confused me but the beginning point is the left side
-      topRight.y + 3,
-      this.width * 0.2,
-      this.height * 0.1
+    ctx.moveTo(
+      this.rightHeadlightPolygon[0].x,
+      this.rightHeadlightPolygon[0].y
     );
+    for (let i = 1; i < this.rightHeadlightPolygon.length; i++) {
+      ctx.lineTo(
+        this.rightHeadlightPolygon[i].x,
+        this.rightHeadlightPolygon[i].y
+      );
+    }
     ctx.fill();
 
     ctx.beginPath();
-    ctx.rect(
-      topLeft.x + this.width * 0.15,
-      topLeft.y + 3,
-      this.width * 0.2,
-      this.height * 0.1
-    );
+    ctx.moveTo(this.leftHeadlightPolygon[0].x, this.leftHeadlightPolygon[0].y);
+    for (let i = 1; i < this.leftHeadlightPolygon.length; i++) {
+      ctx.lineTo(
+        this.leftHeadlightPolygon[i].x,
+        this.leftHeadlightPolygon[i].y
+      );
+    }
     ctx.fill();
 
     ctx.fillStyle = "#000000";
