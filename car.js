@@ -1,5 +1,11 @@
 class Car {
-  constructor(x, y, width, height) {
+  constructor({
+    initialPosition: { x, y },
+    size: { width, height },
+    controlType,
+    maxSpeed = 3,
+    color,
+  }) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -7,60 +13,78 @@ class Car {
 
     this.speed = 0;
     this.acceleration = 0.2;
-    this.maxSpeed = 3;
+    this.maxSpeed = maxSpeed;
     this.friction = 0.05;
 
     this.angle = 0;
 
     this.damaged = false;
 
-    this.sensor = new Sensor(this);
-    this.controls = new Controls();
+    this.color = color;
+
+    if (controlType !== "DUMMY") {
+      this.sensor = new Sensor(this);
+    }
+
+    this.controls = new Controls(controlType);
   }
 
-  update(roadBorders) {
-    this.#move();
-    this.polygon = this.#createPolygon(
-      this.angle,
-      this.width,
-      this.height,
-      this.x,
-      this.y
-    );
-    const slightlySmallerPolygon = this.#createPolygon(
-      this.angle,
-      this.width - 10,
-      this.height - 6,
-      this.x,
-      this.y
-    );
-    this.rightHeadlightPolygon = this.#createPolygon(
-      this.angle,
-      6,
-      4,
-      slightlySmallerPolygon[0].x,
-      slightlySmallerPolygon[0].y
-    );
-    this.leftHeadlightPolygon = this.#createPolygon(
-      this.angle,
-      6,
-      4,
-      slightlySmallerPolygon[1].x,
-      slightlySmallerPolygon[1].y
-    );
-    this.damaged = this.#assessDamage(roadBorders);
-    this.sensor.update(roadBorders);
+  update(roadBorders, traffic) {
+    if (!this.damaged) {
+      this.#move();
+      this.polygon = createPolygon(
+        this.x,
+        this.y,
+        this.width,
+        this.height,
+        this.angle
+      );
+      const slightlySmallerPolygon = createPolygon(
+        this.x,
+        this.y,
+        this.width - 10,
+        this.height - 6,
+        this.angle
+      );
+      this.rightHeadlightPolygon = createPolygon(
+        slightlySmallerPolygon[0].x,
+        slightlySmallerPolygon[0].y,
+        6,
+        4,
+        this.angle
+      );
+      this.leftHeadlightPolygon = createPolygon(
+        slightlySmallerPolygon[1].x,
+        slightlySmallerPolygon[1].y,
+        6,
+        4,
+        this.angle
+      );
+
+      this.damaged = this.#assessDamage(roadBorders, traffic);
+    }
+
+    if (this.sensor) {
+      this.sensor.update(roadBorders, traffic);
+    }
   }
 
   draw(ctx) {
-    this.sensor.draw(ctx);
+    if (this.sensor) {
+      this.sensor.draw(ctx);
+    }
+
     this.#drawCar(ctx);
   }
 
-  #assessDamage(roadBorders) {
+  #assessDamage(roadBorders, traffic) {
     for (let i = 0; i < roadBorders.length; i++) {
       if (polysIntersect(this.polygon, roadBorders[i])) {
-        console.log("yes");
+        return true;
+      }
+    }
+    for (let i = 0; i < traffic.length; i++) {
+      if (polysIntersect(this.polygon, traffic[i].polygon)) {
         return true;
       }
     }
@@ -68,61 +92,9 @@ class Car {
     return false;
   }
 
-  #createPolygon(angle, width, height, x, y) {
-    const points = [];
-
-    // Line from the center to any of the points
-    const radius = Math.hypot(width, height) / 2;
-
-    // Angle from midline of car to the radius
-    const alpha = Math.atan2(width, height);
-
-    // We want to find the coordinates of a point
-    // We have the hypotenuse from the center of a rectangle to that point,
-    // so we want to find the lengths of the other two sides.
-    // No, not quite.
-    // We want to make a triangle where the x-axis is one of the sides and get its length,
-    // and then where the y-axis is one of the sides and get that length.
-    //
-    // We know the angle from the axis to the midline,        (this.angle)
-    // and we know the angle from the midline to the radius,  (alpha)
-    // so we can use that to determine the angle from the radius to an axis.
-    //
-    // After that,
-    // sin(someAngle) = opposite / hypotenuse
-    // cos(someAngle) = adjacent / hypotenuse
-    // So it gives us our opposite/adjacent side lengths which make our coordinates.
-
-    // Top right
-    points.push({
-      x: x - Math.sin(angle - alpha) * radius,
-      y: y - Math.cos(angle - alpha) * radius,
-    });
-
-    // Top left
-    points.push({
-      x: x - Math.sin(angle + alpha) * radius,
-      y: y - Math.cos(angle + alpha) * radius,
-    });
-
-    // Bottom left bc it's 180 degrees around
-    points.push({
-      x: x - Math.sin(Math.PI + angle - alpha) * radius,
-      y: y - Math.cos(Math.PI + angle - alpha) * radius,
-    });
-
-    // Bottom right
-    points.push({
-      x: x - Math.sin(Math.PI + angle + alpha) * radius,
-      y: y - Math.cos(Math.PI + angle + alpha) * radius,
-    });
-
-    return points;
-  }
-
   #drawCar(ctx) {
     // Draw the rectangle
-    ctx.fillStyle = this.damaged ? "gray" : "blue";
+    ctx.fillStyle = this.damaged ? "gray" : this.color;
     ctx.beginPath();
     ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
     for (let i = 1; i < this.polygon.length; i++) {

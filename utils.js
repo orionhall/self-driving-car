@@ -57,3 +57,95 @@ function polysIntersect(poly1, poly2) {
 
   return false;
 }
+
+function createManyPolygons(x, y, width, height, angle, numPolys) {
+  const polygons = [];
+  const perPolyWidth = width / numPolys;
+  const perPolyHeight = height / numPolys;
+
+  for (let i = 0; i < numPolys; i++) {
+    const thisPolyWidth = perPolyWidth + i * perPolyWidth;
+    const thisPolyHeight = perPolyHeight + i * perPolyHeight;
+
+    polygons.push(createPolygon(x, y, thisPolyWidth, thisPolyHeight, angle));
+  }
+
+  return polygons;
+}
+
+// Playing with polygons is just fun
+// this.manyPolygons = createManyPolygons(
+//   this.x,
+//   this.y,
+//   100,
+//   100,
+//   this.angle,
+//   5
+// );
+// #drawManyPolygons(ctx) {
+//   const colors = ["red", "orange", "yellow", "green", "blue", "purple"];
+//   debugger;
+//   for (let i = 0; i < this.manyPolygons.length; i++) {
+//     const currentPolygon = this.manyPolygons[i];
+//     ctx.strokeStyle = colors[i];
+//     ctx.beginPath();
+//     ctx.moveTo(currentPolygon[0].x, currentPolygon[0].y);
+//     for (let j = 1; j < currentPolygon.length; j++) {
+//       ctx.lineTo(currentPolygon[j].x, currentPolygon[j].y);
+//     }
+//     ctx.lineTo(currentPolygon[0].x, currentPolygon[0].y);
+//     ctx.stroke();
+//   }
+// }
+
+function createPolygon(x, y, width, height, angle) {
+  const points = [];
+
+  // Line from the center to any of the points
+  const radius = Math.hypot(width, height) / 2;
+
+  // Angle from midline of car to the radius
+  const alpha = Math.atan2(width, height);
+
+  // We want to find the coordinates of a point
+  // We have the hypotenuse from the center of a rectangle to that point,
+  // so we want to find the lengths of the other two sides.
+  // No, not quite.
+  // We want to make a triangle where the x-axis is one of the sides and get its length,
+  // and then where the y-axis is one of the sides and get that length.
+  //
+  // We know the angle from the axis to the midline,        (this.angle)
+  // and we know the angle from the midline to the radius,  (alpha)
+  // so we can use that to determine the angle from the radius to an axis.
+  //
+  // After that,
+  // sin(someAngle) = opposite / hypotenuse
+  // cos(someAngle) = adjacent / hypotenuse
+  // So it gives us our opposite/adjacent side lengths which make our coordinates.
+
+  // Top right
+  points.push({
+    x: x - Math.sin(angle - alpha) * radius,
+    y: y - Math.cos(angle - alpha) * radius,
+  });
+
+  // Top left
+  points.push({
+    x: x - Math.sin(angle + alpha) * radius,
+    y: y - Math.cos(angle + alpha) * radius,
+  });
+
+  // Bottom left bc it's 180 degrees around
+  points.push({
+    x: x - Math.sin(Math.PI + angle - alpha) * radius,
+    y: y - Math.cos(Math.PI + angle - alpha) * radius,
+  });
+
+  // Bottom right
+  points.push({
+    x: x - Math.sin(Math.PI + angle + alpha) * radius,
+    y: y - Math.cos(Math.PI + angle + alpha) * radius,
+  });
+
+  return points;
+}
